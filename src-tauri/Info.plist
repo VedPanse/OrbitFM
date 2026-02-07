@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>OrbitFM uses your location to provide location-aware features.</string>
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>OrbitFM uses your location to provide location-aware features.</string>
+  <key>NSLocationUsageDescription</key>
+  <string>OrbitFM uses your location to provide location-aware features.</string>
+</dict>
+</plist>
