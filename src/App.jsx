@@ -66,7 +66,6 @@ function App() {
     } catch (err) {
       const msg = `Failed to get estimate: ${String(err)}`;
       setError(msg);
-      setTime(null);
       setTimeLoading(false);
       throw err;
     }
@@ -323,7 +322,7 @@ function App() {
         <div className="metric">
           <span className="label">Next pass</span>
           <span className="value">
-            {timeLoading ? "..." : time == null ? "--" : formatMetric(time, 1)}
+            {time == null ? (timeLoading ? "..." : "--") : formatMetric(time, 1)}
           </span>
           <span className="unit">min</span>
         </div>
