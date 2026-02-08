@@ -227,6 +227,8 @@ function App() {
 
     resize();
 
+    const pulseStart = performance.now();
+
     const globe = createGlobe(canvas, {
       devicePixelRatio: dpr,
       width,
@@ -242,14 +244,32 @@ function App() {
       glowColor: [0.5, 0.6, 1],
       markerColor: [1, 1, 1],
       scale: 1.12,
-      markers: Number.isFinite(issData.latitude) && Number.isFinite(issData.longitude)
-        ? [{ location: [issData.latitude, issData.longitude], size: 0.06, color: [1, 1, 1] }]
-        : [],
+      markers: [],
       onRender: (state) => {
         state.width = width;
         state.height = height;
         state.phi = globeStateRef.current.phi;
         state.theta = globeStateRef.current.theta;
+        if (Number.isFinite(issData.latitude) && Number.isFinite(issData.longitude)) {
+          const elapsed = (performance.now() - pulseStart) / 1000;
+          const breath = (Math.sin(elapsed * Math.PI * 0.6) + 1) / 2;
+          const ease = breath * breath * (3 - 2 * breath);
+          const haloSize = 0.095 + ease * 0.025;
+          state.markers = [
+            {
+              location: [issData.latitude, issData.longitude],
+              size: haloSize,
+              color: [0.75, 0.88, 1]
+            },
+            {
+              location: [issData.latitude, issData.longitude],
+              size: 0.052,
+              color: [1, 1, 1]
+            }
+          ];
+        } else {
+          state.markers = [];
+        }
       }
     });
 
