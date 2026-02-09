@@ -9,6 +9,7 @@ import createGlobe from "cobe";
 import "./App.css";
 
 const ISS_ENDPOINT = "https://api.wheretheiss.at/v1/satellites/25544";
+const ISS_TLE_ENDPOINT = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE";
 
 async function ensureNotificationPermission() {
   const granted = await isPermissionGranted();
@@ -36,11 +37,28 @@ function formatMetric(value, decimals = 0) {
 
 // ISS marker is rendered by COBE markers to avoid duplicate overlays.
 
+function parseTle(text) {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length < 2) return null;
+  if (lines.length >= 3 && lines[1].startsWith("1 ") && lines[2].startsWith("2 ")) {
+    return { name: lines[0], line1: lines[1], line2: lines[2] };
+  }
+  if (lines[0].startsWith("1 ") && lines[1].startsWith("2 ")) {
+    return { name: null, line1: lines[0], line2: lines[1] };
+  }
+  return null;
+}
+
 
 function App() {
   const [time, setTime] = useState(null);
   const [timeLoading, setTimeLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showOrbit, setShowOrbit] = useState(false);
+  const [tleData, setTleData] = useState({ name: null, line1: null, line2: null });
   const [issData, setIssData] = useState({
     latitude: null,
     longitude: null,
@@ -196,6 +214,34 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+
+    async function loadTle() {
+      try {
+        const resp = await fetch(ISS_TLE_ENDPOINT);
+        if (!resp.ok) {
+          throw new Error(`TLE request failed: ${resp.status}`);
+        }
+        const text = await resp.text();
+        const parsed = parseTle(text);
+        if (!mounted) return;
+        if (!parsed) {
+          throw new Error("Unexpected TLE format.");
+        }
+        setTleData(parsed);
+      } catch (err) {
+        if (!mounted) return;
+        setError(`Failed to load ISS TLE: ${String(err)}`);
+      }
+    }
+
+    loadTle();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     fetchTimeToISS().catch(() => {});
   }, []);
 
@@ -285,6 +331,7 @@ function App() {
     };
   }, [issData.latitude, issData.longitude]);
 
+
   function handlePointerDown(event) {
     dragStateRef.current.dragging = true;
     dragStateRef.current.lastX = event.clientX;
@@ -329,36 +376,60 @@ function App() {
       </header>
 
       <section className="scene">
-        <div ref={globeWrapRef} className="globe-wrap full">
-          <canvas
-            ref={canvasRef}
-            className="globe-canvas"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          />
-          {null}
-          <div className="globe-caption">ISS TRACKING • LIVE ORBIT</div>
-          <div className="controls floating">
-            <button onClick={getTimeToISS} className="ghost">
-              Refresh ISS window
-            </button>
-            <button
-              onClick={() => {
-                setError("");
-                scheduleIssNotifications().catch((err) => {
-                  const msg = `Failed to send notification: ${String(err)}`;
-                  setError(msg);
-                });
-              }}
-              className="primary"
-            >
-              Arm notifications
-            </button>
+        {showOrbit ? (
+          <div className="globe-wrap full">
+            <iframe
+              className="orbit-frame"
+              title="ISS Orbit Projections"
+              src="/orbit.html"
+              frameBorder="0"
+              allow="fullscreen"
+            />
+            <div className="controls floating">
+              <button onClick={getTimeToISS} className="ghost">
+                Refresh ISS window
+              </button>
+              <button
+                onClick={() => {
+                  setError("");
+                  setShowOrbit((prev) => !prev);
+                }}
+                className="primary"
+              >
+                Back to Globe
+              </button>
+            </div>
+            {error ? <p className="error floating">{error}</p> : null}
           </div>
-          {error ? <p className="error floating">{error}</p> : null}
-        </div>
+        ) : (
+          <div ref={globeWrapRef} className="globe-wrap full">
+            <canvas
+              ref={canvasRef}
+              className="globe-canvas"
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+            />
+            {null}
+            <div className="globe-caption">ISS TRACKING • LIVE ORBIT</div>
+            <div className="controls floating">
+              <button onClick={getTimeToISS} className="ghost">
+                Refresh ISS window
+              </button>
+              <button
+                onClick={() => {
+                  setError("");
+                  setShowOrbit(true);
+                }}
+                className="primary"
+              >
+                Trajectory Projections
+              </button>
+            </div>
+            {error ? <p className="error floating">{error}</p> : null}
+          </div>
+        )}
       </section>
     </main>
   );

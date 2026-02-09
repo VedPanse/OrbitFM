@@ -98,11 +98,6 @@ fn haversine_km(lat1_deg: f64, lon1_deg: f64, lat2_deg: f64, lon2_deg: f64) -> f
     R * c
 }
 
-fn horizon_distance_km(alt_km: f64) -> f64 {
-    const R: f64 = 6371.0; // km
-    let c_max = (R / (R + alt_km)).acos();
-    R * c_max
-}
 
 fn max_distance_for_elevation_km(alt_km: f64, min_elev_deg: f64) -> f64 {
     const R: f64 = 6371.0; // km

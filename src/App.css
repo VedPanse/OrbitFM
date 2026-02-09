@@ -84,7 +84,7 @@ body::before {
 .scene {
   position: relative;
   flex: 1;
-  min-height: 70vh;
+  min-height: 85vh;
 }
 
 .controls {
@@ -149,7 +149,7 @@ button.primary {
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  min-height: 70vh;
+  min-height: 85vh;
 }
 
 .globe-wrap.full {
@@ -164,6 +164,14 @@ button.primary {
   height: 100%;
   display: block;
   cursor: grab;
+}
+
+.orbit-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
 }
 
 .globe-canvas:active {
