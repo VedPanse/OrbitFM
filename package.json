@@ -16,8 +16,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "cobe": "^0.6.5",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "satellite.js": "^6.0.2"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
