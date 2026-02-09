@@ -6,6 +6,7 @@ import {
   sendNotification
 } from "@tauri-apps/plugin-notification";
 import createGlobe from "cobe";
+import * as satellite from "satellite.js";
 import "./App.css";
 
 const ISS_ENDPOINT = "https://api.wheretheiss.at/v1/satellites/25544";
@@ -59,6 +60,7 @@ function App() {
   const [error, setError] = useState("");
   const [showOrbit, setShowOrbit] = useState(false);
   const [tleData, setTleData] = useState({ name: null, line1: null, line2: null });
+  const [orbitPath, setOrbitPath] = useState([]);
   const [issData, setIssData] = useState({
     latitude: null,
     longitude: null,
@@ -242,6 +244,31 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!tleData.line1 || !tleData.line2) return;
+    const satrec = satellite.twoline2satrec(tleData.line1, tleData.line2);
+    const now = new Date();
+    const minutesSpan = 90;
+    const stepMinutes = 2;
+    const points = [];
+
+    for (let t = -minutesSpan; t <= minutesSpan; t += stepMinutes) {
+      const time = new Date(now.getTime() + t * 60 * 1000);
+      const positionAndVelocity = satellite.propagate(satrec, time);
+      const positionEci = positionAndVelocity.position;
+      if (!positionEci) continue;
+      const gmst = satellite.gstime(time);
+      const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+      const lat = satellite.degreesLat(positionGd.latitude);
+      const lon = satellite.degreesLong(positionGd.longitude);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        points.push([lat, lon]);
+      }
+    }
+
+    setOrbitPath(points);
+  }, [tleData.line1, tleData.line2]);
+
+  useEffect(() => {
     fetchTimeToISS().catch(() => {});
   }, []);
 
@@ -285,9 +312,9 @@ function App() {
       mapSamples: 16000,
       mapBrightness: 7.5,
       baseColor: [0.28, 0.36, 0.85],
-      landColor: [0.9, 0.95, 1],
+      landColor: [0.12, 0.36, 0.22],
       glowColor: [0.5, 0.6, 1],
-      markerColor: [1, 1, 1],
+      markerColor: [0.7, 0.9, 1],
       scale: 1.12,
       markers: [],
       onRender: (state) => {
@@ -295,26 +322,40 @@ function App() {
         state.height = height;
         state.phi = globeStateRef.current.phi;
         state.theta = globeStateRef.current.theta;
+        const markers = [];
+        if (orbitPath.length > 0) {
+          for (const [lat, lon] of orbitPath) {
+            markers.push({
+              location: [lat, lon],
+              size: 0.012,
+              color: [0.7, 0.9, 1]
+            });
+          }
+        }
         if (Number.isFinite(issData.latitude) && Number.isFinite(issData.longitude)) {
           const elapsed = (performance.now() - pulseStart) / 1000;
           const breath = (Math.sin(elapsed * Math.PI * 0.6) + 1) / 2;
           const ease = breath * breath * (3 - 2 * breath);
           const haloSize = 0.095 + ease * 0.025;
-          state.markers = [
+          markers.push(
             {
               location: [issData.latitude, issData.longitude],
-              size: haloSize,
-              color: [0.75, 0.88, 1]
+              size: haloSize * 1.45,
+              color: [0.15, 0.95, 0.8]
             },
             {
               location: [issData.latitude, issData.longitude],
-              size: 0.052,
+              size: haloSize,
+              color: [0.35, 0.9, 1]
+            },
+            {
+              location: [issData.latitude, issData.longitude],
+              size: 0.045,
               color: [1, 1, 1]
             }
-          ];
-        } else {
-          state.markers = [];
+          );
         }
+        state.markers = markers;
       }
     });
 
@@ -329,7 +370,7 @@ function App() {
       resizeObserver.disconnect();
       globe.destroy();
     };
-  }, [issData.latitude, issData.longitude]);
+  }, [issData.latitude, issData.longitude, orbitPath]);
 
 
   function handlePointerDown(event) {
