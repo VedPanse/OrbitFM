@@ -1,6 +1,7 @@
-export default function OrbitEmbed({ error, onRefresh, onBack }) {
+export default function OrbitEmbed({ error, onRefresh, onBack, mode = "full" }) {
+  const wrapperClass = mode === "panel" ? "orbit-panel" : "globe-wrap full";
   return (
-    <div className="globe-wrap full">
+    <div className={wrapperClass}>
       <iframe
         className="orbit-frame"
         title="ISS Orbit Projections"
@@ -13,7 +14,7 @@ export default function OrbitEmbed({ error, onRefresh, onBack }) {
           Refresh ISS window
         </button>
         <button onClick={onBack} className="primary">
-          Back to Globe
+          {mode === "panel" ? "Hide Orbit" : "Back to Globe"}
         </button>
       </div>
       {error ? <p className="error floating">{error}</p> : null}

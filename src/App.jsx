@@ -23,8 +23,27 @@ function App() {
     <main className="app">
       <TopMetrics issData={issData} time={time} timeLoading={timeLoading} />
       <section className="scene">
+        <GlobeScene
+          issData={issData}
+          orbitPath={orbitPath}
+          error={error}
+          onRefresh={() => {
+            setIssError("");
+            setOrbitError("");
+            setTimeError("");
+            refresh().catch(() => {});
+          }}
+          onTrajectory={() => {
+            setIssError("");
+            setOrbitError("");
+            setTimeError("");
+            scheduleNotifications().catch(() => {});
+            setShowOrbit((prev) => !prev);
+          }}
+        />
         {showOrbit ? (
           <OrbitEmbed
+            mode="panel"
             error={error}
             onRefresh={() => {
               setIssError("");
@@ -39,26 +58,7 @@ function App() {
               setShowOrbit(false);
             }}
           />
-        ) : (
-          <GlobeScene
-            issData={issData}
-            orbitPath={orbitPath}
-            error={error}
-            onRefresh={() => {
-              setIssError("");
-              setOrbitError("");
-              setTimeError("");
-              refresh().catch(() => {});
-            }}
-            onTrajectory={() => {
-              setIssError("");
-              setOrbitError("");
-              setTimeError("");
-              scheduleNotifications().catch(() => {});
-              setShowOrbit(true);
-            }}
-          />
-        )}
+        ) : null}
       </section>
     </main>
   );
