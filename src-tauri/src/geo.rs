@@ -1,5 +1,6 @@
 use crate::models::{IpApiCoResponse, IpApiComResponse, IpInfoResponse};
 
+/// Get location from ip
 pub async fn get_user_location() -> Result<(f64, f64), String> {
     if let Ok(resp) = reqwest::get("https://ipapi.co/json/").await {
         if let Ok(data) = resp.json::<IpApiCoResponse>().await {
@@ -26,6 +27,7 @@ pub async fn get_user_location() -> Result<(f64, f64), String> {
     Err("All IP geolocation providers failed".to_string())
 }
 
+/// Calculate the haversine distance to iss
 pub fn haversine_km(lat1_deg: f64, lon1_deg: f64, lat2_deg: f64, lon2_deg: f64) -> f64 {
     const R: f64 = 6371.0;
     let lat1 = lat1_deg.to_radians();
